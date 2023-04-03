@@ -1,6 +1,8 @@
 const uuid = require('uuid');
 const form = require('../../database/model/form')
-
+const response = require('../../database/model/response')
+const fs = require("fs");
+const csv = require("csv-stringify");
 
 exports.addForm = async (req,res)=> {
     try {
@@ -52,6 +54,8 @@ exports.getFormDetails = async (req,res)=>{
 
         let data = await form.findOne({uuid})
 
+
+
         if(data)
         {
             res.send(data);
@@ -84,12 +88,33 @@ exports.editForm = async (req,res)=> {
 
 exports.submitResponse = async (req,res)=> {
     try {
+        let {uuid,email} = req.body 
+
+        if (!uuid || !email) return res.status(204).send({message : "No uuid or email found"})
+
+        let resData = {};
+
+         Object.keys(req.body).map((row,i)=>{
+            if(row !== "uuid" && row !== "email")
+            return Object.assign(resData,{[row] : req.body[row]})
+        })
+
+        req.body.response = resData
+
         console.log(req.body)
 
-        return res.send({message : 'Form updated successfully !!!'})
+        let data = response(req.body)
+
+        data = await data.save();
+
+        if(data)
+        {
+            console.log(data)
+            return res.send({message : 'Form Submitted successfully !!!'})
+        }
+
     } catch (error) {
         console.log('Error>>',error)
         return res.status(500).send('Something Went Wrong !!!')
     }
 }
-
